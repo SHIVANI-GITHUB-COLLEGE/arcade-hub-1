@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameZone — 5 Classic Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --accent: #00f5c4;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --danger: #ef4444;
+    --success: #10b981;
+    --border: rgba(0,245,196,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* NAV */
+  nav {
+    background: rgba(10,10,15,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,245,196,0.4);
+  }
+  .logo span { color: var(--accent2); }
+  .score-bar {
+    display: flex; gap: 1.5rem; align-items: center;
+    font-family: 'Orbitron', monospace; font-size: 0.75rem;
+  }
+  .score-item { color: var(--muted); }
+  .score-item b { color: var(--accent); }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 3rem 2rem 2rem;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.12) 0%, transparent 70%);
+  }
+  .hero h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+    margin-bottom: 0.5rem;
+  }
+  .hero p { color: var(--muted); font-size: 1.1rem; letter-spacing: 1px; }
+
+  /* GAME GRID */
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .game-tab {
+    padding: 1rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: all 0.2s;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--muted);
+    user-select: none;
+  }
+  .game-tab:last-child { border-right: none; }
+  .game-tab .tab-icon { font-size: 1.8rem; display: block; margin-bottom: 0.3rem; }
+  .game-tab:hover { background: var(--surface); color: var(--text); }
+  .game-tab.active {
+    background: var(--surface);
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 0 20px rgba(0,245,196,0.1) inset;
+  }
+
+  /* GAME AREA */
+  .game-area { display: none; padding: 2rem; max-width: 900px; margin: 0 auto; }
+  .game-area.active { display: block; }
+  .game-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem; padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--accent);
+  }
+  .game-stats { display: flex; gap: 1.5rem; font-family: 'Orbitron', monospace; font-size: 0.75rem; }
+  .stat { color: var(--muted); }
+  .stat b { color: var(--accent3); font-size: 1rem; }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.5rem 1.5rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 15px rgba(0,245,196,0.3); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+
+  /* =================== SNAKE =================== */
+  #snake-canvas {
+    display: block; margin: 0 auto;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    image-rendering: pixelated;
+  }
+  .controls-hint {
+    text-align: center; color: var(--muted); font-size: 0.85rem;
+    margin-top: 1rem; letter-spacing: 1px;
+  }
+  .overlay-msg {
+    text-align: center; padding: 2rem;
+    font-family: 'Orbitron', monospace;
+  }
+  .overlay-msg h2 { font-size: 1.5rem; color: var(--accent); margin-bottom: 0.5rem; }
+  .overlay-msg p { color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* =================== MEMORY =================== */
+  .memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .mem-card {
+    aspect-ratio: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    transition: all 0.3s;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .mem-card .front, .mem-card .back {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.3s;
+  }
+  .mem-card .back { opacity: 0; font-size: 2rem; }
+  .mem-card .front { font-size: 1.5rem; color: var(--muted); }
+  .mem-card.flipped .front { opacity: 0; }
+  .mem-card.flipped .back { opacity: 1; }
+  .mem-card.matched {
+    border-color: var(--success);
+    background: rgba(16,185,129,0.1);
+    cursor: default;
+  }
+  .mem-card:hover:not(.matched) { border-color: var(--accent); transform: scale(1.05); }
+
+  /* =================== TYPING =================== */
+  .typing-display {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    font-size: 1.3rem;
+    line-height: 2;
+    margin-bottom: 1rem;
+    min-height: 120px;
+    letter-spacing: 0.5px;
+    position: relative;
+  }
+  .t-char { position: relative; }
+  .t-char.correct { color: var(--success); }
+  .t-char.wrong { color: var(--danger); background: rgba(239,68,68,0.2); border-radius: 2px; }
+  .t-char.current::after {
+    content: '';
+    position: absolute; left: 0; top: 2px; bottom: 2px;
+    width: 2px; background: var(--accent);
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .typing-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    caret-color: var(--accent);
+  }
+  .typing-input:focus { border-color: var(--accent); }
+  .typing-stats { display: flex; gap: 2rem; margin-top: 1rem; }
+  .typing-stat { text-align: center; }
+  .typing-stat .val { font-family: 'Orbitron', monospace; font-size: 1.5rem; color: var(--accent3); }
+  .typing-stat .lbl { font-size: 0.8rem; color: var(--muted); }
+
+  /* =================== WORDLE =================== */
+  .wordle-board {
+    display: flex; flex-direction: column; gap: 6px;
+    align-items: center; margin-bottom: 1.5rem;
+  }
+  .wordle-row { display: flex; gap: 6px; }
+  .wordle-cell {
+    width: 56px; height: 56px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem; font-weight: 700;
+    transition: all 0.3s;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .wordle-cell.correct { background: #166534; border-color: #16a34a; color: #fff; }
+  .wordle-cell.present { background: #854d0e; border-color: #ca8a04; color: #fff; }
+  .wordle-cell.absent { background: #1e293b; border-color: #334155; color: var(--muted); }
+  .wordle-cell.filled { border-color: var(--accent2); transform: scale(1.05); }
+  .wordle-keyboard {
+    display: flex; flex-direction: column; gap: 6px; align-items: center;
+  }
+  .kb-row { display: flex; gap: 5px; }
+  .kb-key {
+    min-width: 36px; height: 44px; padding: 0 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Orbitron', monospace;
+    font-size: 0.65rem; font-weight: 700;
+    cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; user-select: none;
+  }
+  .kb-key.wide { min-width: 56px; font-size: 0.55rem; }
+  .kb-key:hover { background: var(--surface); border-color: var(--accent); }
+  .kb-key.correct { background: #166534; border-color: #16a34a; }
+  .kb-key.present { background: #854d0e; border-color: #ca8a04; }
+  .kb-key.absent { background: #0f172a; border-color: #1e293b; color: var(--muted); }
+
+  /* =================== NUMBER GUESS =================== */
+  .guess-container { max-width: 500px; margin: 0 auto; }
+  .guess-range {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem;
+  }
+  .range-val { font-family: 'Orbitron', monospace; font-size: 1.2rem; }
+  .range-low { color: var(--success); }
+  .range-high { color: var(--danger); }
+  .range-mid { color: var(--muted); font-size: 0.8rem; }
+  .guess-input-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+  .guess-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s;
+    caret-color: var(--accent);
+  }
+  .guess-input:focus { border-color: var(--accent); }
+  .guess-history {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem;
+  }
+  .guess-chip {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    border: 1px solid;
+  }
+  .guess-chip.low { border-color: var(--success); color: var(--success); background: rgba(16,185,129,0.1); }
+  .guess-chip.high { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.1); }
+  .guess-chip.correct { border-color: var(--accent3); color: var(--accent3); background: rgba(245,158,11,0.15); }
+  .guess-feedback {
+    text-align: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: all 0.3s;
+  }
+  .guess-feedback.low { color: var(--success); background: rgba(16,185,129,0.1); }
+  .guess-feedback.high { color: var(--danger); background: rgba(239,68,68,0.1); }
+  .guess-feedback.correct { color: var(--accent3); background: rgba(245,158,11,0.1); }
+  .guess-feedback.hidden { display: none; }
+
+  /* =================== PROGRESS BARS =================== */
+  .progress-bar-wrap {
+    height: 6px; background: var(--surface2);
+    border-radius: 3px; margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 3px; transition: width 0.3s;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 2rem;
+    color: var(--muted); font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">GAME<span>ZONE</span></div>
+  <div class="score-bar">
+    <div class="score-item">TOTAL SCORE: <b id="total-score">0</b></div>
+    <div class="score-item">GAMES PLAYED: <b id="games-played">0</b></div>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>ARCADE HUB</h1>
+  <p>5 Classic Games · Instant Play · No Download</p>
+</div>
+
+<!-- TABS -->
+<div class="game-grid">
+  <div class="game-tab active" onclick="switchGame('snake')">
+    <span class="tab-icon">🐍</span>SNAKE
+  </div>
+  <div class="game-tab" onclick="switchGame('memory')">
+    <span class="tab-icon">🧠</span>MEMORY
+  </div>
+  <div class="game-tab" onclick="switchGame('typing')">
+    <span class="tab-icon">⌨️</span>TYPING
+  </div>
+  <div class="game-tab" onclick="switchGame('wordle')">
+    <span class="tab-icon">📝</span>WORDLE
+  </div>
+  <div class="game-tab" onclick="switchGame('guess')">
+    <span class="tab-icon">🎯</span>GUESS
+  </div>
+</div>
+
+<!-- ======================== SNAKE GAME ======================== -->
+<div id="game-snake" class="game-area active">
+  <div class="game-header">
+    <div class="game-title">🐍 SNAKE</div>
+    <div class="game-stats">
+      <div class="stat">SCORE <b id="snake-score">0</b></div>
+      <div class="stat">BEST <b id="snake-best">0</b></div>
+      <div class="stat">LEVEL <b id="snake-level">1</b></div>
+    </div>
+    <button class="btn" onclick="startSnake()">NEW GAME</button>
+  </div>
+  <canvas id="snake-canvas" width="480" height="480"></canvas>
+  <p class="controls-hint">Arrow keys or WASD to move · Eat food to grow · Don't hit walls!</p>
+</div>
+
+<!-- ======================== MEMORY GAME ======================== -->
+<div id="game-memory" class="game-area">
+  <div class="game-header">
+    <div class="game-title">🧠 MEMORY</div>
+    <div class="game-stats">
+      <div class="stat">MOVES <b id="mem-moves">0</b></div>
+      <div class="stat">PAIRS <b id="mem-pairs">0</b>/8</div>
+      <div class="stat">TIME <b id="mem-time">0s</b></div>
+    </div>
+    <button class="btn" onclick="startMemory()">NEW GAME</button>
+  </div>
+  <div class="memory-grid" id="memory-grid"></div>
+</div>
+
+<!-- ======================== TYPING GAME ======================== -->
+<div id="game-typing" class="game-area">
+  <div class="game-header">
+    <div class="game-title">⌨️ TYPING SPEED</div>
+    <div class="game-stats">
+      <div class="stat">WPM <b id="type-wpm">0</b></div>
+      <div class="stat">ACC <b id="type-acc">100%</b></div>
+      <div class="stat">TIME <b id="type-time">60s</b></div>
+    </div>
+    <button class="btn" onclick="startTyping()">NEW GAME</button>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="type-progress" style="width:100%"></div></div>
+  <div class="typing-display" id="typing-display"></div>
+  <input class="typing-input" id="typing-input" type="text" placeholder="Start typing when ready..." autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="typing-stats">
+    <div class="typing-stat"><div class="val" id="t-wpm">0</div><div class="lbl">WPM</div></div>
+    <div class="typing-stat"><div class="val" id="t-acc">—</div><div class="lbl">ACCURACY</div></div>
+    <div class="typing-stat"><div class="val" id="t-chars">0</div><div class="lbl">CHARACTERS</div></div>
+    <div class="typing-stat"><div class="val" id="t-errors">0</div><div class="lbl">ERRORS</div></div>
+  </div>
+</div>
+
+<!-- ======================== WORDLE GAME ======================== -->
+<div id="game-wordle" class="game-area">
+  <div class="game-header">
+    <div class="game-title">📝 WORDLE</div>
+    <div class="game-stats">
+      <div class="stat">STREAK <b id="w-streak">0</b></div>
+      <div class="stat">WINS <b id="w-wins">0</b></div>
+      <div class="stat">ATTEMPT <b id="w-attempt">1</b>/6</div>
+    </div>
+    <button class="btn" onclick="startWordle()">NEW WORD</button>
+  </div>
+  <div id="wordle-msg" style="text-align:center;margin-bottom:1rem;font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent3);min-height:24px;"></div>
+  <div class="wordle-board" id="wordle-board"></div>
+  <div class="wordle-keyboard" id="wordle-keyboard"></div>
+</div>
+
+<!-- ======================== NUMBER GUESS ======================== -->
+<div id="game-guess" class="game-area">
+  <div class="game-header">
+    <div class="game-title">🎯 NUMBER GUESS</div>
+    <div class="game-stats">
+      <div class="stat">TRIES <b id="g-tries">0</b></div>
+      <div class="stat">BEST <b id="g-best">—</b></div>
+      <div class="stat">WINS <b id="g-wins">0</b></div>
+    </div>
+    <button class="btn" onclick="startGuess()">NEW GAME</button>
+  </div>
+  <div class="guess-container">
+    <div class="guess-range">
+      <span class="range-val range-low" id="g-low">1</span>
+      <span class="range-mid">PICK A NUMBER</span>
+      <span class="range-val range-high" id="g-high">100</span>
+    </div>
+    <div id="guess-feedback" class="guess-feedback hidden"></div>
+    <div class="guess-input-row">
+      <input class="guess-input" id="guess-input" type="number" min="1" max="100" placeholder="??">
+      <button class="btn" onclick="submitGuess()" style="white-space:nowrap;">GUESS</button>
+    </div>
+    <div class="guess-history" id="guess-history"></div>
+  </div>
+</div>
+
+<footer>GAMEZONE · 5 ARCADE CLASSICS · BUILT WITH HTML + CSS + JS</footer>
+
+<script>
+// ============================================================
+//  GLOBAL
+// ============================================================
+let totalScore = 0, gamesPlayed = 0;
+function addScore(n) {
+  totalScore += n;
+  gamesPlayed++;
+  document.getElementById('total-score').textContent = totalScore;
+  document.getElementById('games-played').textContent = gamesPlayed;
+}
+function switchGame(name) {
+  document.querySelectorAll('.game-area').forEach(a => a.classList.remove('active'));
+  document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('game-' + name).classList.add('active');
+  const tabs = document.querySelectorAll('.game-tab');
+  const idx = ['snake','memory','typing','wordle','guess'].indexOf(name);
+  tabs[idx].classList.add('active');
+  if (name === 'snake' && !snakeRunning) showSnakeMsg('Press NEW GAME or Arrow Key to Start', 'WASD / ↑↓←→ to move');
+  if (name === 'typing') document.getElementById('typing-input').focus();
+}
+
+// ============================================================
+//  SNAKE GAME
+// ============================================================
+const canvas = document.getElementById('snake-canvas');
+const ctx = canvas.getContext('2d');
+const CELL = 20, COLS = 24, ROWS = 24;
+let snake, dir, food, snakeLoop, snakeScore, snakeBest = 0, snakeLevel, snakeRunning = false;
+
+function startSnake() {
+  snake = [{x:12,y:12},{x:11,y:12},{x:10,y:12}];
+  dir = {x:1,y:0};
+  snakeScore = 0; snakeLevel = 1; snakeRunning = true;
+  document.getElementById('snake-score').textContent = 0;
+  document.getElementById('snake-level').textContent = 1;
+  placeFood();
+  clearInterval(snakeLoop);
+  snakeLoop = setInterval(tickSnake, 150);
+  drawSnake();
+}
+
+function placeFood() {
+  do { food = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)}; }
+  while (snake.some(s=>s.x===food.x&&s.y===food.y));
+}
+
+function tickSnake() {
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+  if (head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS||snake.some(s=>s.x===head.x&&s.y===head.y)) {
+    clearInterval(snakeLoop); snakeRunning = false;
+    if (snakeScore > snakeBest) { snakeBest = snakeScore; document.getElementById('snake-best').textContent = snakeBest; }
+    showSnakeMsg('GAME OVER', 'Score: ' + snakeScore + ' · Press NEW GAME to retry');
+    return;
+  }
+  snake.unshift(head);
+  if (head.x===food.x&&head.y===food.y) {
+    snakeScore += 10; document.getElementById('snake-score').textContent = snakeScore;
+    snakeLevel = Math.floor(snakeScore/50)+1; document.getElementById('snake-level').textContent = snakeLevel;
+    clearInterval(snakeLoop); snakeLoop = setInterval(tickSnake, Math.max(60, 150 - snakeLevel*15));
+    placeFood();
+  } else { snake.pop(); }
+  drawSnake();
+}
+
+function drawSnake() {
+  ctx.fillStyle = '#12121a'; ctx.fillRect(0,0,480,480);
+  // Grid dots
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for(let x=0;x<COLS;x++) for(let y=0;y<ROWS;y++) {
+    ctx.fillRect(x*CELL+9,y*CELL+9,2,2);
+  }
+  // Food
+  ctx.fillStyle = '#f59e0b';
+  ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 10;
+  ctx.fillRect(food.x*CELL+3, food.y*CELL+3, CELL-6, CELL-6);
+  ctx.shadowBlur = 0;
+  // Snake
+  snake.forEach((s,i) => {
+    const t = 1 - i/snake.length;
+    ctx.fillStyle = i===0 ? '#00f5c4' : `rgba(0,${Math.round(200*t+55)},${Math.round(150*t)},0.9)`;
+    if(i===0) { ctx.shadowColor='#00f5c4'; ctx.shadowBlur=8; }
+    ctx.fillRect(s.x*CELL+1, s.y*CELL+1, CELL-2, CELL-2);
+    ctx.shadowBlur=0;
+  });
+}
+
+function showSnakeMsg(title, sub) {
+  ctx.fillStyle='rgba(10,10,15,0.85)'; ctx.fillRect(0,0,480,480);
+  ctx.fillStyle='#00f5c4'; ctx.font='bold 28px Orbitron,monospace';
+  ctx.textAlign='center'; ctx.fillText(title, 240, 200);
+  ctx.fillStyle='#64748b'; ctx.font='14px Rajdhani,sans-serif';
+  ctx.fillText(sub, 240, 240);
+}
+
+document.addEventListener('keydown', e => {
+  const map = {ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},
+               w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0}};
+  if(map[e.key]) {
+    e.preventDefault();
+    const nd = map[e.key];
+    if(nd.x !== -dir.x || nd.y !== -dir.y) dir = nd;
+    if(!snakeRunning) startSnake();
+  }
+});
+
+showSnakeMsg('SNAKE', 'Press NEW GAME or Arrow Key to Start');
+
+// ============================================================
+//  MEMORY GAME
+// ============================================================
+const EMOJIS = ['🎮','🚀','🌟','💎','🎯','🔥','⚡','🎸'];
+let memCards=[], memFlipped=[], memMatched=0, memMoves=0, memTimer, memTime=0;
+
+function startMemory() {
+  clearInterval(memTimer); memMatched=0; memMoves=0; memTime=0;
+  document.getElementById('mem-moves').textContent=0;
+  document.getElementById('mem-pairs').textContent='0';
+  document.getElementById('mem-time').textContent='0s';
+  const pairs = [...EMOJIS,...EMOJIS].sort(()=>Math.random()-0.5);
+  const grid = document.getElementById('memory-grid');
+  grid.innerHTML='';
+  memCards=[];
+  pairs.forEach((em,i) => {
+    const c = document.createElement('div');
+    c.className='mem-card'; c.dataset.idx=i; c.dataset.val=em;
+    c.innerHTML=`<div class="front">?</div><div class="back">${em}</div>`;
+    c.onclick = () => flipCard(c);
+    grid.appendChild(c); memCards.push(c);
+  });
+  memFlipped=[];
+  memTimer = setInterval(() => {
+    memTime++;
+    document.getElementById('mem-time').textContent = memTime+'s';
+  }, 1000);
+}
+
+function flipCard(c) {
+  if(c.classList.contains('flipped')||c.classList.contains('matched')||memFlipped.length>=2) return;
+  c.classList.add('flipped'); memFlipped.push(c);
+  if(memFlipped.length===2) {
+    memMoves++; document.getElementById('mem-moves').textContent=memMoves;
+    setTimeout(() => {
+      if(memFlipped[0].dataset.val===memFlipped[1].dataset.val) {
+        memFlipped.forEach(c=>c.classList.add('matched'));
+        memMatched++; document.getElementById('mem-pairs').textContent=memMatched;
+        if(memMatched===8) {
+          clearInterval(memTimer);
+          const s = Math.max(0, 500 - memMoves*20 - memTime*5);
+          addScore(s); alert(`🎉 Completed in ${memMoves} moves & ${memTime}s!\n+${s} points!`);
+        }
+      } else { memFlipped.forEach(c=>c.classList.remove('flipped')); }
+      memFlipped=[];
+    }, 600);
+  }
+}
+
+startMemory();
+
+// ============================================================
+//  TYPING SPEED GAME
+// ============================================================
+const SENTENCES = [
+  "The quick brown fox jumps over the lazy dog near the riverbank",
+  "Programming is the art of telling another human what one wants the computer to do",
+  "Every great developer you know got there by solving problems they were not qualified to solve",
+  "The best way to predict the future is to invent it with code and creativity",
+  "Code is like humor when you have to explain it it is not that good anymore",
+  "First solve the problem then write the code as simply and clearly as possible",
+  "Simplicity is the soul of efficiency in programming and in life itself",
+  "Talk is cheap show me the code and I will show you the results immediately"
+];
+let typingActive=false, typingTimer, typingTimeLeft=60, typingText='', typingIdx=0;
+let typingErrors=0, typingStartTime, typingTyped=0;
+
+function startTyping() {
+  clearInterval(typingTimer); typingActive=false; typingIdx=0; typingErrors=0; typingTyped=0;
+  typingTimeLeft=60; typingText = SENTENCES[Math.floor(Math.random()*SENTENCES.length)];
+  document.getElementById('type-time').textContent='60s';
+  document.getElementById('type-wpm').textContent='0';
+  document.getElementById('type-acc').textContent='100%';
+  document.getElementById('type-progress').style.width='100%';
+  document.getElementById('t-wpm').textContent='0';
+  document.getElementById('t-acc').textContent='—';
+  document.getElementById('t-chars').textContent='0';
+  document.getElementById('t-errors').textContent='0';
+  const input = document.getElementById('typing-input');
+  input.value=''; input.disabled=false; input.focus();
+  renderTypingText();
+}
+
+function renderTypingText() {
+  const disp = document.getElementById('typing-display');
+  disp.innerHTML = typingText.split('').map((ch,i) => {
+    let cls='t-char';
+    if(i<typingIdx) cls += typingText[i]===typingText[i] ? ' correct' : ' wrong';
+    if(i===typingIdx) cls+=' current';
+    return `<span class="${cls}">${ch}</span>`;
+  }).join('');
+}
+
+document.getElementById('typing-input').addEventListener('input', e => {
+  const val = e.target.value;
+  if(!typingActive && val.length>0) {
+    typingActive=true; typingStartTime=Date.now();
+    typingTimer=setInterval(() => {
+      typingTimeLeft--;
+      document.getElementById('type-time').textContent=typingTimeLeft+'s';
+      document.getElementById('type-progress').style.width=(typingTimeLeft/60*100)+'%';
+      const elapsed=(60-typingTimeLeft)/60;
+      if(typingTimeLeft<=0) {
+        clearInterval(typingTimer); typingActive=false;
+        document.getElementById('typing-input').disabled=true;
+        const wpm=Math.round((typingTyped/5));
+        addScore(wpm*2);
+        alert(`⌨️ Time's up!\nWPM: ${wpm} · Errors: ${typingErrors}\n+${wpm*2} points!`);
+      }
+    },1000);
+  }
+  if(!typingActive) return;
+  const ch = typingText[typingIdx];
+  const last = val[val.length-1];
+  if(last===ch) {
+    typingIdx++; typingTyped++;
+    document.getElementById('t-chars').textContent=typingTyped;
+  } else {
+    typingErrors++;
+    document.getElementById('t-errors').textContent=typingErrors;
+  }
+  e.target.value='';
+  const elapsed = (Date.now()-typingStartTime)/60000;
+  const wpm = elapsed>0 ? Math.round((typingTyped/5)/elapsed) : 0;
+  const acc = typingTyped>0 ? Math.round(typingTyped/(typingTyped+typingErrors)*100) : 100;
+  document.getElementById('t-wpm').textContent=wpm;
+  document.getElementById('type-wpm').textContent=wpm;
+  document.getElementById('t-acc').textContent=acc+'%';
+  document.getElementById('type-acc').textContent=acc+'%';
+  renderTypingText();
+  if(typingIdx>=typingText.length) {
+    clearInterval(typingTimer); typingActive=false;
+    document.getElementById('typing-input').disabled=true;
+    addScore(wpm*3+acc);
+    alert(`✅ Finished!\nWPM: ${wpm} · Accuracy: ${acc}%\n+${wpm*3+acc} points!`);
+  }
+});
+
+startTyping();
+
+// ============================================================
+//  WORDLE GAME
+// ============================================================
+const WORDS = ['FLAME','GRACE','PLANT','BRUSH','CLOCK','PRIZE','STONE','BREAD','CRISP','DWARF',
+               'EARTH','FLAIR','GLOOM','HASTE','IVORY','JOKER','KNEEL','LEMON','MAGIC','NIGHT',
+               'OLIVE','PRISM','QUEST','RIDER','SKIMP','TREND','ULTRA','VAPOR','WRIST','YIELD'];
+let wTarget, wCurrent='', wRow=0, wGameOver=false, wStreak=0, wWins=0;
+const KROWS=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];
+
+function buildWordleBoard() {
+  const b=document.getElementById('wordle-board'); b.innerHTML='';
+  for(let r=0;r<6;r++){
+    const row=document.createElement('div'); row.className='wordle-row'; row.id='wrow-'+r;
+    for(let c=0;c<5;c++){
+      const cell=document.createElement('div'); cell.className='wordle-cell'; cell.id=`wc-${r}-${c}`;
+      row.appendChild(cell);
+    }
+    b.appendChild(row);
+  }
+}
+function buildWordleKeyboard() {
+  const kb=document.getElementById('wordle-keyboard'); kb.innerHTML='';
+  KROWS.forEach(row=>{
+    const r=document.createElement('div'); r.className='kb-row';
+    row.forEach(k=>{
+      const btn=document.createElement('div');
+      btn.className='kb-key'+(k.length>1?' wide':'');
+      btn.textContent=k; btn.id='wk-'+k;
+      btn.onclick=()=>wordleKey(k);
+      r.appendChild(btn);
+    });
+    kb.appendChild(r);
+  });
+}
+function startWordle() {
+  wTarget=WORDS[Math.floor(Math.random()*WORDS.length)];
+  wCurrent=''; wRow=0; wGameOver=false;
+  document.getElementById('w-attempt').textContent='1';
+  document.getElementById('wordle-msg').textContent='';
+  buildWordleBoard(); buildWordleKeyboard();
+}
+function wordleKey(k) {
+  if(wGameOver) return;
+  if(k==='⌫'||k==='BACKSPACE') { wCurrent=wCurrent.slice(0,-1); }
+  else if(k==='ENTER') { submitWordle(); return; }
+  else if(wCurrent.length<5 && /^[A-Z]$/.test(k)) { wCurrent+=k; }
+  renderWordleRow();
+}
+function renderWordleRow() {
+  for(let c=0;c<5;c++){
+    const cell=document.getElementById(`wc-${wRow}-${c}`);
+    cell.textContent=wCurrent[c]||'';
+    cell.className='wordle-cell'+(wCurrent[c]?' filled':'');
+  }
+}
+function submitWordle() {
+  if(wCurrent.length!==5){document.getElementById('wordle-msg').textContent='Need 5 letters!';return;}
+  const guess=wCurrent; const target=wTarget;
+  const result=Array(5).fill('absent');
+  const targetArr=target.split(''); const used=Array(5).fill(false);
+  for(let i=0;i<5;i++) if(guess[i]===target[i]){result[i]='correct';used[i]=true;}
+  for(let i=0;i<5;i++) if(result[i]!=='correct'){
+    const j=targetArr.findIndex((ch,idx)=>ch===guess[i]&&!used[idx]&&result[idx]!=='correct');
+    if(j!==-1){result[i]='present';used[j]=true;}
+  }
+  for(let c=0;c<5;c++){
+    const cell=document.getElementById(`wc-${wRow}-${c}`);
+    setTimeout(()=>{cell.className='wordle-cell '+result[c]; cell.textContent=guess[c];}, c*80);
+    setTimeout(()=>{
+      const kBtn=document.getElementById('wk-'+guess[c]);
+      if(kBtn){
+        const curr=kBtn.className;
+        if(!curr.includes('correct')&&!(curr.includes('present')&&result[c]==='absent')) kBtn.className='kb-key'+(guess[c].length>1?' wide':'')+' '+result[c];
+      }
+    }, c*80+200);
+  }
+  wRow++;
+  const won=guess===target;
+  setTimeout(()=>{
+    if(won){
+      wWins++; wStreak++;
+      document.getElementById('w-wins').textContent=wWins;
+      document.getElementById('w-streak').textContent=wStreak;
+      document.getElementById('wordle-msg').textContent=`🎉 GENIUS! The word was ${target}`;
+      addScore(100+(6-wRow)*20); wGameOver=true;
+    } else if(wRow>=6){
+      wStreak=0; document.getElementById('w-streak').textContent=0;
+      document.getElementById('wordle-msg').textContent=`❌ GAME OVER · Word was: ${target}`;
+      wGameOver=true;
+    } else {
+      document.getElementById('w-attempt').textContent=wRow+1;
+      wCurrent='';
+    }
+  }, 500);
+}
+document.addEventListener('keydown', e=>{
+  if(document.getElementById('game-wordle').classList.contains('active')){
+    const k=e.key.toUpperCase();
+    if(k==='BACKSPACE') wordleKey('⌫');
+    else if(k==='ENTER') wordleKey('ENTER');
+    else if(/^[A-Z]$/.test(k)) wordleKey(k);
+  }
+});
+startWordle();
+
+// ============================================================
+//  NUMBER GUESS GAME
+// ============================================================
+let gSecret, gTries=0, gBest=null, gWins=0, gOver=false, gLow=1, gHigh=100;
+
+function startGuess() {
+  gSecret=Math.floor(Math.random()*100)+1; gTries=0; gOver=false; gLow=1; gHigh=100;
+  document.getElementById('g-tries').textContent=0;
+  document.getElementById('guess-history').innerHTML='';
+  document.getElementById('guess-input').value='';
+  document.getElementById('g-low').textContent=1;
+  document.getElementById('g-high').textContent=100;
+  document.getElementById('guess-feedback').className='guess-feedback hidden';
+  document.getElementById('guess-input').disabled=false;
+}
+
+function submitGuess() {
+  if(gOver) return;
+  const input=document.getElementById('guess-input');
+  const val=parseInt(input.value);
+  if(isNaN(val)||val<1||val>100) { alert('Enter a number between 1 and 100!'); return; }
+  gTries++;
+  document.getElementById('g-tries').textContent=gTries;
+  input.value='';
+  const fb=document.getElementById('guess-feedback');
+  const hist=document.getElementById('guess-history');
+  const chip=document.createElement('div');
+  if(val===gSecret) {
+    gOver=true; gWins++;
+    document.getElementById('g-wins').textContent=gWins;
+    if(!gBest||gTries<gBest) { gBest=gTries; document.getElementById('g-best').textContent=gTries; }
+    fb.textContent=`🎯 CORRECT! It was ${gSecret}! Found in ${gTries} tries.`;
+    fb.className='guess-feedback correct';
+    chip.className='guess-chip correct'; chip.textContent=val;
+    hist.appendChild(chip);
+    addScore(Math.max(10, 100-gTries*10));
+    document.getElementById('guess-input').disabled=true;
+    alert(`🎯 Correct! The number was ${gSecret}!\nGuesses: ${gTries} · +${Math.max(10,100-gTries*10)} pts`);
+  } else if(val<gSecret) {
+    gLow=Math.max(gLow,val+1);
+    fb.textContent=`📈 Too LOW! Go higher.`;
+    fb.className='guess-feedback low';
+    document.getElementById('g-low').textContent=gLow;
+    chip.className='guess-chip low'; chip.textContent=val+'↑';
+    hist.appendChild(chip);
+  } else {
+    gHigh=Math.min(gHigh,val-1);
+    fb.textContent=`📉 Too HIGH! Go lower.`;
+    fb.className='guess-feedback high';
+    document.getElementById('g-high').textContent=gHigh;
+    chip.className='guess-chip high'; chip.textContent=val+'↓';
+    hist.appendChild(chip);
+  }
+}
+
+document.getElementById('guess-input').addEventListener('keydown', e => { if(e.key==='Enter') submitGuess(); });
+
+startGuess();
+</script>
+</body>
+</html>
